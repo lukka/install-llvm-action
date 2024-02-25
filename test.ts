@@ -45,6 +45,7 @@ Expected at least two arguments:
       forceVersion: false,
       cached: false,
       env: false,
+      remoteCached: false
     };
 
     for (const argument of process.argv.slice(start + 3)) {

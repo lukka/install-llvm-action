@@ -6,19 +6,21 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "parcel build index.ts",
-    "test": "ts-node test.ts test"
+    "build": "npx tsc",
+    "test": "ts-node test.ts test",
+    "pack": "npx ncc build build/index.js -o dist/"
   },
   "dependencies": {
     "@actions/core": "~1.10.0",
-    "@actions/exec": "~1.1.1",
-    "@actions/io": "~1.1.3",
-    "@actions/tool-cache": "~2.0.1"
+    "@actions/exec": "^1.1.1",
+    "@actions/io": "^1.1.3",
+    "@actions/tool-cache": "^2.0.1",
+    "@actions/cache": "~3.2.4"
   },
   "devDependencies": {
     "@types/node": "~20",
-    "parcel": "^2",
-    "ts-node": "^10",
+    "@vercel/ncc": "^0.38.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   },
   "targets": {

@@ -1,8 +1,18 @@
 {
   "compilerOptions": {
-    "lib": ["ES2023"],
+    "lib": [
+      "ES2023"
+    ],
     "moduleResolution": "node",
-    "strict": true
+    "strict": true,
+    "outDir": "build"
   },
-  "files": ["./index.ts", "./test.ts"]
+  "files": [
+    "./index.ts",
+    "./test.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
 }

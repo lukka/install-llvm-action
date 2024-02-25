@@ -30,6 +30,9 @@ inputs:
   env:
     description: "Whether to set CC and CXX environment variables to Clang paths."
     required: false
+  remote-cached:
+    description: "Use remote cloud based cache."
+    required: false
 
 outputs:
   version:

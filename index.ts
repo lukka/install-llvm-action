@@ -3,6 +3,7 @@ import * as exec from "@actions/exec";
 import * as io from "@actions/io";
 import * as tc from "@actions/tool-cache";
 import * as path from "path";
+import * as cc from "@actions/cache"
 
 export interface Options {
   version: string,
@@ -10,6 +11,7 @@ export interface Options {
   forceVersion: boolean,
   ubuntuVersion?: string,
   cached: boolean,
+  remoteCached: boolean,
   downloadUrl?: string,
   auth?: string,
   env: boolean,
@@ -22,6 +24,7 @@ function getOptions(): Options {
     ubuntuVersion: core.getInput("ubuntu-version"),
     directory: core.getInput("directory"),
     cached: (core.getInput("cached") || "").toLowerCase() === "true",
+    remoteCached: (core.getInput("remote-cached") || "").toLowerCase() === "true",
     downloadUrl: core.getInput("download-url"),
     auth: core.getInput("auth"),
     env: (core.getInput("env") ?? "").toLowerCase() === "true",
@@ -355,28 +358,46 @@ async function install(options: Options): Promise<void> {
   core.setOutput("version", specificVersion);
 
   console.log(`Installing LLVM and Clang ${options.version} (${specificVersion})...`);
-  console.log(`Downloading and extracting '${url}'...`);
-  const archive = await tc.downloadTool(url, '', options.auth);
-
-  let exit;
-  if (platform === "win32") {
-    exit = await exec.exec("7z", ["x", archive, `-o${options.directory}`, "-y"]);
-  } else {
-    await io.mkdirP(options.directory);
-    exit = await exec.exec("tar", ["xf", archive, "-C", options.directory, "--strip-components=1"]);
+  let cloudCacheHit = false;
+  const cloudCacheKey = `${specificVersion}${url}`;
+  if (options.remoteCached) {
+    const key = await cc.restoreCache([options.directory], cloudCacheKey);
+    if (key) {
+      cloudCacheHit = true;
+      console.log(`Cloud cache hit with key: ${key}`);
+    }
+    else {
+      console.log(`Cloud cache missed.`);
+    }
   }
 
-  if (exit !== 0) {
-    throw new Error("Could not extract LLVM and Clang binaries.");
+  if (!cloudCacheHit) {
+    console.log(`Downloading and extracting '${url}'...`);
+    const archive = await tc.downloadTool(url, '', options.auth);
+    let exit;
+    if (platform === "win32") {
+      exit = await exec.exec("7z", ["x", archive, `-o${options.directory}`, "-y"]);
+    } else {
+      await io.mkdirP(options.directory);
+      exit = await exec.exec("tar", ["xf", archive, "-C", options.directory, "--strip-components=1"]);
+      if (exit !== 0) {
+        throw new Error("Could not extract LLVM and Clang binaries.");
+      }
+    }
   }
 
   core.info(`Installed LLVM and Clang ${options.version} (${specificVersion})!`);
   core.info(`Install location: ${options.directory}`);
+
+  if (options.remoteCached) {
+    const key = await cc.saveCache([options.directory], cloudCacheKey);
+    console.log(`Saved cache at ${options.directory} with key: ${key}`);
+  }
 }
 
 async function run(options: Options): Promise<void> {
   if (!options.directory) {
-    options.directory =  process.platform === "win32"
+    options.directory = process.platform === "win32"
       ? DEFAULT_WIN32_DIRECTORY
       : DEFAULT_NIX_DIRECTORY;
   }

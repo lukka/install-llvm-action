@@ -3,3 +3,5 @@ node_modules/
 *.log
 package-lock.json
 .parcel-cache
+index.js
+test.js
